@@ -111,7 +111,7 @@ El cliente solo envia texto al servidor y muestra la respuesta recibida. La logi
 
 ### Comando ls -lh
 
-![Comando ls detallado](capturas/ls-h.png)
+![Comando ls -lh](capturas/ls-lh.png)
 
 ### Comando cat
 
