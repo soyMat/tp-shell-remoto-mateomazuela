@@ -1,8 +1,8 @@
 import socket
 import getpass
 
-# aca tenes que poner la ip de tu vm1
-IP = '192.168.56.10' 
+# aca tenes que poner la ip de tu vm servidor
+IP = '192.168.56.10'
 PUERTO = 5000
 
 cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -13,6 +13,7 @@ try:
     
     # pido los datos de login
     user = input("usuario: ")
+
     # getpass sirve para que no se vea lo que tipias
     password = getpass.getpass("pass: ")
     
@@ -23,14 +24,17 @@ try:
     # espero a ver si me deja entrar
     respuesta_login = cliente.recv(1024).decode()
     
-    if respuesta_login == "ok":
+    if respuesta_login.startswith("ok"):
         print("\nentraste bien!")
-        bienvenida = cliente.recv(1024).decode()
+
+        # saco el ok y muestro el resto como bienvenida
+        bienvenida = respuesta_login.replace("ok", "", 1)
         print(bienvenida)
         
         # empieza el bucle para mandar comandos
         while True:
             comando = input("shell> ")
+
             if comando == "":
                 continue
                 
@@ -43,6 +47,7 @@ try:
             # recibo lo que me contesta el servidor y lo imprimo
             respuesta = cliente.recv(4096).decode()
             print(respuesta, end="")
+
     else:
         # si me rechaza imprimo el error
         print("\nerror:", respuesta_login)
