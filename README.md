@@ -97,29 +97,58 @@ Las contraseñas no se guardan en texto plano. Se guarda un hash SHA-256 usando 
 
 ## Como ejecutarlo
 
-### 1. Crear certificado SSL/TLS
+### 1. Preparar el proyecto en la VM servidor
 
-    openssl req -new -x509 -days 365 -nodes -out cert.pem -keyout key.pem
+Entrar a la carpeta del proyecto:
 
-### 2. Crear carpeta raiz
+    cd ~/tarea
 
-    mkdir archivos_servidor
+Crear la carpeta raiz del servidor si no existe:
 
-### 3. Crear archivo de prueba
+    mkdir -p archivos_servidor
+
+Crear un archivo de prueba:
 
     echo "hola desde fase 2" > archivos_servidor/prueba.txt
 
-### 4. Crear usuario
+### 2. Generar certificado SSL/TLS
+
+En la misma carpeta del proyecto ejecutar:
+
+    openssl req -new -x509 -days 365 -nodes -out cert.pem -keyout key.pem
+
+Esto genera los archivos `cert.pem` y `key.pem`, necesarios para que el servidor use SSL/TLS.
+
+### 3. Crear usuario en la base de datos
+
+Ejecutar:
 
     python3 crear_usuario.py
 
-### 5. Ejecutar servidor
+Ejemplo de usuario:
+
+    usuario: mateo
+    password: tuda
+
+Ese usuario queda guardado en `usuarios.db`.
+
+### 4. Ejecutar el servidor
+
+En la VM servidor:
 
     python3 proy-1-srv-tcp.py
 
-### 6. Ejecutar cliente
+Debe aparecer algo parecido a:
+
+    server seguro escuchando en el puerto 5000...
+
+### 5. Ejecutar el cliente
+
+En la VM cliente:
 
     python3 proy-1-cli-tcp.py
+
+Ingresar el usuario y password creados anteriormente.
 
 ## Capturas
 
