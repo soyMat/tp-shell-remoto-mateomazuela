@@ -1,58 +1,64 @@
 import socket
+import ssl
 import getpass
 
-# aca tenes que poner la ip de tu vm servidor
-IP = '192.168.56.10'
+from red import enviar_mensaje, recibir_mensaje
+
+IP = "192.168.56.101"
 PUERTO = 5000
 
-cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+contexto_ssl = ssl.create_default_context()
+
+# como usamos certificado propio, desactivo la verificacion del certificado
+contexto_ssl.check_hostname = False
+contexto_ssl.verify_mode = ssl.CERT_NONE
+
+socket_normal = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+cliente = contexto_ssl.wrap_socket(socket_normal, server_hostname=IP)
 
 try:
     cliente.connect((IP, PUERTO))
-    print("conectado al server!")
-    
-    # pido los datos de login
-    user = input("usuario: ")
+    print("conectado al server seguro!")
 
-    # getpass sirve para que no se vea lo que tipias
-    password = getpass.getpass("pass: ")
-    
-    # junto el usuario y la pass y lo mando
-    credenciales = user + " " + password
-    cliente.send(credenciales.encode())
-    
-    # espero a ver si me deja entrar
-    respuesta_login = cliente.recv(1024).decode()
-    
-    if respuesta_login.startswith("ok"):
-        print("\nentraste bien!")
+    usuario = input("usuario: ")
+    password = getpass.getpass("password: ")
 
-        # saco el ok y muestro el resto como bienvenida
+    enviar_mensaje(cliente, usuario)
+    enviar_mensaje(cliente, password)
+
+    respuesta_login = recibir_mensaje(cliente)
+
+    if respuesta_login is None:
+        print("no se recibio respuesta del servidor")
+
+    elif respuesta_login.startswith("ok"):
         bienvenida = respuesta_login.replace("ok", "", 1)
         print(bienvenida)
-        
-        # empieza el bucle para mandar comandos
+
         while True:
             comando = input("shell> ")
 
             if comando == "":
                 continue
-                
-            cliente.send(comando.encode())
-            
-            if comando == "exit":
-                print("saliendo...")
+
+            enviar_mensaje(cliente, comando)
+
+            respuesta = recibir_mensaje(cliente)
+
+            if respuesta is None:
+                print("conexion cerrada por el servidor")
                 break
-                
-            # recibo lo que me contesta el servidor y lo imprimo
-            respuesta = cliente.recv(4096).decode()
+
             print(respuesta, end="")
 
+            if comando.strip() == "exit":
+                break
+
     else:
-        # si me rechaza imprimo el error
-        print("\nerror:", respuesta_login)
-        
+        print(respuesta_login)
+
 except Exception as e:
     print("no se pudo conectar:", e)
 
-cliente.close()
+finally:
+    cliente.close()
