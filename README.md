@@ -132,6 +132,27 @@ Ejemplo de usuario:
 
 Ese usuario queda guardado en `usuarios.db`.
 
+### Importante
+
+El archivo `red.py` debe estar tanto en la carpeta del servidor como en la carpeta del cliente, porque ambos programas lo usan para enviar y recibir mensajes con prefijo de longitud.
+
+En la VM servidor deben estar:
+
+    proy-1-srv-tcp.py
+    red.py
+    seguridad.py
+    comandos.py
+    crear_usuario.py
+    usuarios.db
+    cert.pem
+    key.pem
+    archivos_servidor/
+
+En la VM cliente deben estar:
+
+    proy-1-cli-tcp.py
+    red.py
+    
 ### 4. Ejecutar el servidor
 
 En la VM servidor:
