@@ -197,7 +197,7 @@ Las contraseñas no se guardan en texto plano. Se guarda un hash SHA-256 usando 
 
 ## Estructura del proyecto
 
-    intro-redes-tuda-proy-1/
+    tp-shell-remoto-mateomazuela/
     |
     ├── proy-1-srv-tcp.py
     ├── proy-1-cli-tcp.py
