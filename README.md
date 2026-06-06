@@ -1,130 +1,235 @@
-# Proyecto: Shell Remoto Multihilo
+# Proyecto: Shell Remoto Multihilo - Fase II
 
-Este es mi proyecto para el laboratorio de redes. Consiste en un sistema cliente-servidor hecho en Python usando sockets TCP y la libreria `threading`, para que puedan conectarse multiples clientes a la vez.
+Este proyecto es un Shell Remoto Multihilo hecho en Python con sockets TCP. El cliente se conecta al servidor desde otra VM y puede ejecutar comandos remotos permitidos.
 
-## Objetivo
-
-El objetivo del proyecto es programar un Shell Remoto Multihilo. El cliente se conecta al servidor por medio de una red LAN virtual de VirtualBox y puede ejecutar comandos remotos programados sobre el servidor.
+En esta Fase II se agregaron mejoras de seguridad, persistencia de usuarios, cifrado, control de clientes simultaneos y manejo de rutas.
 
 ## Ambiente experimental
 
-Para probar el proyecto se usaron dos maquinas virtuales en VirtualBox:
+Se usaron dos maquinas virtuales en VirtualBox:
 
 - VM1: Servidor
 - VM2: Cliente
 
-Configuracion de red:
+Red usada:
 
-- Adaptador 1: NAT, para acceso a internet.
-- Adaptador 2: Red Solo-Anfitrion, para la comunicacion entre las dos VMs.
+- Adaptador NAT para internet.
+- Adaptador Red Solo-Anfitrion para comunicar las VMs.
 
-Ejemplo de IP usada:
+Ejemplo:
 
-- Servidor: `192.168.56.10`
+- IP servidor: `192.168.56.10`
 - Puerto: `5000`
 
-## Caracteristicas
+## Funcionalidades agregadas en Fase II
 
-- **Login:** tiene un sistema de autenticacion al entrar. Las contraseñas estan ocultas usando la libreria `getpass`.
-- **Multihilo:** cada cliente que entra es manejado por un hilo distinto, asi el servidor no se traba.
-- **Sockets TCP:** el cliente y el servidor se comunican usando sockets TCP.
-- **Comandos:** el servidor interpreta comandos enviados por el cliente y devuelve la respuesta.
+- Limite de 5 clientes simultaneos.
+- Uso de `threading.Lock` para controlar el contador de clientes.
+- Cifrado SSL/TLS con el modulo `ssl` de Python.
+- Usuarios guardados en una base de datos SQLite.
+- Contraseñas guardadas con hash SHA-256 y salt.
+- Mensajes enviados con prefijo de longitud para evitar cortes.
+- Comando `cd`.
+- Validacion de rutas para evitar salir de la carpeta raiz del servidor.
+- Codigo separado en archivos de red, seguridad y comandos.
+
+## Archivos del proyecto
+
+- `proy-1-srv-tcp.py`: servidor principal.
+- `proy-1-cli-tcp.py`: cliente principal.
+- `red.py`: envio y recepcion de mensajes.
+- `seguridad.py`: base de datos, hash y validacion de usuarios.
+- `comandos.py`: logica de comandos.
+- `crear_usuario.py`: permite crear usuarios.
+- `usuarios.db`: base de datos SQLite.
+- `cert.pem`: certificado SSL/TLS.
+- `key.pem`: clave privada SSL/TLS.
+- `archivos_servidor/`: carpeta raiz permitida.
+- `capturas/`: capturas de funcionamiento.
+
+## Cifrado usado
+
+Se uso SSL/TLS mediante el modulo `ssl` de Python.
+
+Para generar el certificado y la clave se ejecuta:
+
+    openssl req -new -x509 -days 365 -nodes -out cert.pem -keyout key.pem
+
+Esto genera:
+
+- `cert.pem`: certificado del servidor.
+- `key.pem`: clave privada del servidor.
+
+Como es un laboratorio, se uso un certificado autofirmado.
+
+## Base de datos
+
+Los usuarios se guardan en SQLite en el archivo `usuarios.db`.
+
+La tabla usada es:
+
+    CREATE TABLE usuarios (
+        usuario TEXT PRIMARY KEY,
+        salt TEXT NOT NULL,
+        password_hash TEXT NOT NULL
+    );
+
+Las contraseñas no se guardan en texto plano. Se guarda un hash SHA-256 usando salt:
+
+    hash = SHA256(salt + password)
 
 ## Comandos disponibles
 
 - `help`: muestra la ayuda.
-- `pwd`: muestra el directorio actual del servidor.
+- `pwd`: muestra el directorio actual.
+- `cd <carpeta>`: cambia de directorio.
 - `mkdir <nombre>`: crea una carpeta.
 - `ls`: lista archivos y carpetas.
-- `ls <ruta>`: lista una ruta especifica.
-- `ls -l`: lista archivos con detalles.
-- `ls -lh`: lista archivos con detalles y tamaños legibles.
+- `ls <ruta>`: lista una ruta.
+- `ls -l`: lista con detalles.
+- `ls -lh`: lista con detalles y tamaños legibles.
 - `cat <archivo>`: muestra el contenido de un archivo.
 - `exit`: cierra la conexion.
 
-## Diagrama de la arquitectura
+## Diagrama
 
 [Haz clic aqui para ver el diagrama de flujo del programa en Draw.io](https://viewer.diagrams.net/?tags=%7B%7D&lightbox=1&highlight=0000ff&layers=1&nav=1&dark=auto#G1kXnJpY866rruHQWGFLyG78zgCwemsJ6J)
 
 ## Como ejecutarlo
 
-### 1. Ejecutar el servidor
+### 1. Crear certificado SSL/TLS
 
-En la maquina servidor iniciar:
+    openssl req -new -x509 -days 365 -nodes -out cert.pem -keyout key.pem
 
-```bash
-python3 proy-1-srv-tcp.py
-```
+### 2. Crear carpeta raiz
 
-### 2. Ejecutar el cliente
+    mkdir archivos_servidor
 
-En la maquina cliente iniciar:
+### 3. Crear archivo de prueba
 
-```bash
-python3 proy-1-cli-tcp.py
-```
+    echo "hola desde fase 2" > archivos_servidor/prueba.txt
 
-### 3. Iniciar sesion
+### 4. Crear usuario
 
-Usar algun usuario valido, por ejemplo:
+    python3 crear_usuario.py
 
-```text
-usuario: mateo
-contraseña: tuda
-```
+### 5. Ejecutar servidor
 
-## Explicacion del funcionamiento
+    python3 proy-1-srv-tcp.py
 
-El servidor crea un socket TCP y queda escuchando en el puerto `5000`.
+### 6. Ejecutar cliente
 
-Cuando un cliente se conecta, el servidor acepta la conexion y crea un hilo nuevo con `threading.Thread`. De esta manera, cada cliente conectado se atiende por separado y el servidor puede seguir aceptando nuevas conexiones.
+    python3 proy-1-cli-tcp.py
 
-El cliente solo envia texto al servidor y muestra la respuesta recibida. La logica de los comandos esta en el servidor.
+## Capturas
 
-## Capturas de funcionamiento
+### Base de datos y archivos del proyecto
 
-### Servidor escuchando
+![Base de datos](capturas/bd-usuarios.png)
 
-![Servidor escuchando](capturas/prendiendo.png)
+### Servidor seguro funcionando
 
-### Servidor confirmacion
+![Servidor seguro](capturas/servidor-fase2.png)
 
-![Servidor confirmacion](capturas/confirmacion.png)
+### Login correcto
 
-### Cliente conectado e inicio de sesion
-
-![Login correcto](capturas/confirmacion-entro.png)
+![Login correcto](capturas/login-fase2.png)
 
 ### Comando help
 
-![Comando help](capturas/login-y-help.png)
-
-### Comando mkdir
-
-![Comando mkdir](capturas/mkdir.png)
-
-### Comando ls
-![Comando ls](capturas/ls.png)
-
-### Comandos ls -l 
-![Comando mkdir y ls](capturas/ls-l.png)
-
-### Comando ls -lh
-
-![Comando ls -lh](capturas/ls-lh.png)
-
-### Comando cat
-
-![Comando cat](capturas/cat.png)
+![Help](capturas/help-fase2.png)
 
 ### Comando pwd
 
-![Comando pwd](capturas/pwd.png)
+![PWD](capturas/pwd-fase2.png)
 
-## Archivos del proyecto
+### Comando ls
 
-- `proy-1-srv-tcp.py`: archivo del servidor TCP multihilo.
-- `proy-1-cli-tcp.py`: archivo del cliente TCP.
-- `README.md`: documentacion del proyecto.
-- `capturas/`: carpeta con las imagenes de funcionamiento.
+![LS](capturas/ls-fase2.png)
 
+### Comando ls -l
+
+![LS detallado](capturas/ls-l-fase2.png)
+
+### Comando ls -lh
+
+![LS tamanio legible](capturas/ls-lh-fase2.png)
+
+### Comando cat
+
+![CAT](capturas/cat-fase2.png)
+
+### Comando mkdir
+
+![MKDIR](capturas/mkdir-fase2.png)
+
+### Comando cd
+
+![CD](capturas/cd-carpeta-fase2.png)
+
+### Comando pwd dentro de carpeta
+
+![PWD carpeta](capturas/pwd-carpeta-fase2.png)
+
+### Comando cat dentro de subcarpeta
+
+![CAT subcarpeta](capturas/cat-subcarpeta-fase2.png)
+
+### Bloqueo de Path Traversal
+
+![Path Traversal](capturas/path-traversal.png)
+
+### Vuelta a la raiz del servidor
+
+![CD vuelve raiz](capturas/cd-vuelve-raiz.png)
+
+### Login incorrecto
+
+![Login incorrecto](capturas/login-incorrecto-fase2.png)
+
+### Prueba multihilo
+
+![Multihilo](capturas/multihilo-fase2.png)
+
+### Desconexion de cliente
+
+![Desconexion cliente](capturas/desconexion-cliente-fase2.png)
+
+## Estructura del proyecto
+
+    intro-redes-tuda-proy-1/
+    |
+    ├── proy-1-srv-tcp.py
+    ├── proy-1-cli-tcp.py
+    ├── red.py
+    ├── seguridad.py
+    ├── comandos.py
+    ├── crear_usuario.py
+    ├── usuarios.db
+    ├── cert.pem
+    ├── key.pem
+    ├── README.md
+    |
+    ├── archivos_servidor/
+    │   └── prueba.txt
+    |
+    └── capturas/
+        ├── servidor-fase2.png
+        ├── crear-usuario.png
+        ├── bd-usuarios.png
+        ├── login-fase2.png
+        ├── help-fase2.png
+        ├── pwd-fase2.png
+        ├── ls-fase2.png
+        ├── ls-l-fase2.png
+        ├── ls-lh-fase2.png
+        ├── cat-fase2.png
+        ├── mkdir-fase2.png
+        ├── cd-carpeta-fase2.png
+        ├── pwd-carpeta-fase2.png
+        ├── cat-subcarpeta-fase2.png
+        ├── path-traversal.png
+        ├── cd-vuelve-raiz.png
+        ├── login-incorrecto-fase2.png
+        ├── multihilo-fase2.png
+        └── desconexion-cliente-fase2.png
